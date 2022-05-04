@@ -15,7 +15,8 @@ namespace Command_Desk
 
         public static String SERVER_IP_STRING = "127.0.0.1";//Dns.GetHostEntry(Dns.GetHostName()).AddressList[0].ToString();
 
-
+        public const String MASTER_USER = "ADMIN"; // These would be configurable in an installer on release
+        public const String MASTER_PASS = "ADMIN"; // These would be configurable in an installer on release
         public const int PORT_INT = 7777;
         public static int ACTIVE = 0;
         public const int MAX_CLIENTS = 255; // Tested up to 2048 and works, 4096 has out of memory exception on my configuration (Intel(R) Core(TM) i7-9700K CPU @ 3.60GHz 3.60 GHz, 32 GB Ram @3600 Mhz).  Will limit at 255 to ensure wider compatibility.

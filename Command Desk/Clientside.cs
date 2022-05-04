@@ -215,8 +215,12 @@ namespace Command_Desk
                                 }
 
                                 if (stage == 4 && intendedTarget && message == string.Format(Program.COMMAND_OK, server.target_append, server.sender_append))
-                                { 
-                                
+                                {
+                                    Console.WriteLine("Action Compelete.");
+
+                                    // Go back up to menu.
+                                    stage = 3;
+                                    CLIENT_SOCKET.Send(Program.Command(string.Format(Program.COMMAND_GOING_MENU, Program.COMMAND_APPEND_TARGET, Program.COMMAND_APPEND_SENDER)));
                                 }
 
                                 if (increase)
@@ -284,7 +288,7 @@ namespace Command_Desk
         {
             Console.WriteLine("Welcome {0}!\n\n", username);
 
-            string accepted = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,!#$%^&*()";
+            string accepted = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,`!#$%^&*()-=_+'\"\\/<>{};:";
 
             bool issue = true;
 
@@ -292,7 +296,7 @@ namespace Command_Desk
 
             while (issue)
             {
-                Console.WriteLine("Allowed Characters: [ a-z ], [ A-Z ], [ 0-9 ], [ .,!#$%^&*() ] \n");
+                Console.WriteLine("Allowed Characters ( no ~ @ [] | ): [ a-z ], [ A-Z ], [ 0-9 ], [ .,`!#$%^&*()-=_+'\"\\/<>{};: ] \n");
                 Console.WriteLine("Please enter a description of your issue: ");
 
                 description = Console.ReadLine();

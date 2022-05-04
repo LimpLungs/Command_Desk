@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading;
 using System.Linq;
 using System.IO;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Command_Desk
 {
@@ -143,12 +145,13 @@ namespace Command_Desk
                             var RequesterUserName = response.message.Split('~')[2];
                             var IssueDescription = response.message.Split('~')[3];
                             var TechnicianClientType = ClientType.TECH.ToString();
-                            var TechnicianUserName = "Logan";
-                            var TechnicianResponse = "Assigned, waiting on response.;";
+                            var TechnicianUserName = leastBusyTechnicianAssign();
+                            var TechnicianResponse = "Waiting on response.";
 
-                            storeNewTicket(RequesterClientType, RequesterUserName, IssueDescription, TechnicianClientType, TechnicianUserName, TechnicianResponse);
+                            string ticket = String.Concat(RequesterClientType, "~", RequesterUserName.ToUpper(), "~", IssueDescription, "~", TechnicianClientType, "~", TechnicianUserName, "~", TechnicianResponse, "|OPEN|\n");
 
-                            increase = true; 
+                            File.AppendAllText("C:\\CommandDesk_Tickets.txt", ticket);
+
                             handler.Send(Program.Command(string.Format(Program.COMMAND_OK, "@" + responder.sender, "[" + responder.target.ToString().ElementAt(0) + "]")));
                         }
                         else if (response.message == string.Format(Program.COMMAND_GOING_VIEW_TICKET, responder.target_append, responder.sender_append))
@@ -192,12 +195,6 @@ namespace Command_Desk
 
         }
 
-        private static void storeNewTicket(string requesterClientType, string requesterUserName, string issueDescription, string technicianClientType, string technicianUserName, string technicianResponse)
-        {
-            throw new NotImplementedException();
-            //do ticket addition
-
-        }
 
         //
         // Summary:
@@ -211,8 +208,13 @@ namespace Command_Desk
         {
             bool valid = false;
 
+
+            // Entire implementation can probably change to a method like File.AppendText which handles creation when 
+            // file does not exist and handles closing, etc. No need to manually call everything in the future.
             if (!File.Exists("C:\\CommandDesk_Credentials.txt"))
-                File.Create("C:\\CommandDesk_Credentials.txt").Close();
+                File.WriteAllText("C:\\CommandDesk_Credentials.txt", Program.MASTER_USER + '~' + Program.MASTER_PASS.GetHashCode() + "~" + ClientType.TECH.ToString() + "\n");
+                
+            
 
             var data = File.ReadAllLines("C:\\CommandDesk_Credentials.txt");
             var ndata = data;
@@ -246,7 +248,7 @@ namespace Command_Desk
             if (!found)
             {
                 Array.Resize(ref ndata, ndata.Length + 1);
-                ndata[ndata.Length - 1] = username + '~' + password_hashcode + "~" + client_type;
+                ndata[ndata.Length - 1] = username.ToUpper() + '~' + password_hashcode + "~" + client_type + "~";
                 valid = true;
             }
 
@@ -254,6 +256,63 @@ namespace Command_Desk
             File.WriteAllLines("C:\\CommandDesk_Credentials.txt", ndata);
 
             return valid;
+        }
+
+        private static string leastBusyTechnicianAssign()
+        {
+
+            if (!File.Exists("C:\\CommandDesk_Credentials.txt"))
+                File.Create("C:\\CommandDesk_Credentials.txt").Close();
+
+            if (!File.Exists("C:\\CommandDesk_Tickets.txt"))
+                File.Create("C:\\CommandDesk_Tickets.txt").Close();
+
+            var tech_data = File.ReadAllLines("C:\\CommandDesk_Credentials.txt");
+            var ticket_data = File.ReadAllLines("C:\\CommandDesk_Tickets.txt");
+            var techs = new List<string>();
+
+            for (int i = 0; i < ticket_data.Length; i++)
+                ticket_data[i] = ticket_data[i].Split('~')[4];
+
+            Array.Sort(ticket_data);
+            Array.Sort(tech_data);
+
+            foreach (var tech in tech_data)
+                if (tech.Split('~')[2] == ClientType.TECH.ToString())
+                {
+                    techs.Add(tech.Split('~')[0]);
+                    Console.WriteLine(techs.ElementAt(techs.Count - 1));
+                }
+
+            string username = Program.MASTER_USER;
+            int count = 0;
+            int min = Int32.MaxValue;
+
+            foreach (var tech in techs)
+            {
+                foreach (var ticket in ticket_data)
+                {
+                    if (ticket.ToUpper() == tech.ToUpper())
+                    {
+                        count += 1;
+                    }
+                }
+
+                if (count < min)
+                {
+                    if ((techs.Count > 1 && tech.ToUpper() != Program.MASTER_USER.ToUpper()) || techs.Count == 1)
+                    {
+                        min = count;
+                        username = tech.ToUpper();
+                    }
+                    else
+                        Console.WriteLine("No TECHS found. Was Tech file deleted during write?");
+                }
+
+                count = 0;
+            }
+
+            return username;
         }
     }
 }
