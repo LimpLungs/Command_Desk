@@ -20,6 +20,7 @@ namespace Command_Desk
             var username = "";
             var password = "";
 
+
             try
             {
                 CLIENT_SOCKET.Connect(CLIENT_IP_ENDPOINT);

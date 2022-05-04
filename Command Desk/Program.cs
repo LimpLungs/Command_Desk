@@ -45,46 +45,66 @@ namespace Command_Desk
             while (loop)
             {
                 var arg = "";
-
                 loop = false;
 
-                Console.WriteLine("Please select to [S]tart or [Q]uit the application.");
-                var input = Console.ReadLine();
-
-                if (String.Equals(input, "S", StringComparison.OrdinalIgnoreCase))
+                if (args.Length <= 0)
                 {
-                    if (args.Length <= 0)
+                    var subloop = true;
+
+                    while (subloop)
                     {
-                        var subloop = true;
+                        subloop = false;
 
-                        while (subloop)
-                        {
-                            subloop = false;
+                        Console.WriteLine("No argument passed. Please select [S]erver, [T]echnician, [U]ser, or [Q]uit");
+                        arg = "-" + Console.ReadLine();
 
-                            Console.WriteLine("No argument passed. Please select [S]erver, [T]echnician, [U]ser, or [Q]uit");
-                            arg = Console.ReadLine();
-
-                            if (!String.Equals(arg, "T", StringComparison.OrdinalIgnoreCase) && !String.Equals(arg, "U", StringComparison.OrdinalIgnoreCase) && !String.Equals(arg, "S", StringComparison.OrdinalIgnoreCase) && !String.Equals(arg, "Q", StringComparison.OrdinalIgnoreCase))
-                                subloop = true;
-                        }
+                        if (!String.Equals(arg, "-T", StringComparison.OrdinalIgnoreCase) && !String.Equals(arg, "-U", StringComparison.OrdinalIgnoreCase) && !String.Equals(arg, "-S", StringComparison.OrdinalIgnoreCase) && !String.Equals(arg, "-Q", StringComparison.OrdinalIgnoreCase))
+                            subloop = true;
                     }
-                    else
-                        arg = args[0];
-
-                    COMMAND_APPEND_SENDER = string.Format("[{0}]", arg.ToUpper());
-
-                    if (String.Equals(arg, "S", StringComparison.OrdinalIgnoreCase))
-                        Serverside.StartServer();
-                    else if (String.Equals(arg, "T", StringComparison.OrdinalIgnoreCase) || String.Equals(arg, "U", StringComparison.OrdinalIgnoreCase))
-                        Clientside.StartClient();
                 }
-                else if (!String.Equals(input, "Q", StringComparison.OrdinalIgnoreCase))
-                    loop = true;
-            }
+                else
+                {
+                    loop = menuHelper(args[0], args.Length);
+                    arg = args[0];
 
+                    if (!loop)
+                        throw new Exception("Command line arguments are improper format.");
+                }
+
+
+                COMMAND_APPEND_SENDER = string.Format("[{0}]", arg.ToUpper()[1]);
+
+                if (String.Equals(arg, "-S", StringComparison.OrdinalIgnoreCase))
+                    Serverside.StartServer();
+                else if (String.Equals(arg, "-T", StringComparison.OrdinalIgnoreCase) || String.Equals(arg, "-U", StringComparison.OrdinalIgnoreCase))
+                    Clientside.StartClient();
+            }
 
         }
 
+
+        public static bool menuHelper(string arg, int arg_size)
+        {
+            if (arg_size > 1)
+            {
+                Console.WriteLine("Too many arguments passed.");
+                return false;
+            }
+            if (arg_size == 1)
+            {
+                if (!String.Equals(arg, "-S", StringComparison.OrdinalIgnoreCase) && 
+                    !String.Equals(arg, "-T", StringComparison.OrdinalIgnoreCase) && 
+                    !String.Equals(arg, "-U", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine("Invalid argument passed.");
+                    return false;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
         public static byte[] Command(String s)
         {
             return Encoding.ASCII.GetBytes(s);
