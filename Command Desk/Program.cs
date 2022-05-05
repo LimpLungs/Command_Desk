@@ -34,7 +34,7 @@ namespace Command_Desk
         public const String COMMAND_GOING_CLOSE_TICKET = "GOINGCLOSETICKET{0}{1}";
 
         public const String COMMAND_GOING_NEW_TICKET = "|NEW|";
-        public const String COMMAND_FLIP_STATUS = "|FLIPSTATUS|~{2}{0}{1}";
+        public const String COMMAND_EDIT_TICKET = "|EDIT|~{2}{0}{1}";
         public const String COMMAND_TICKET_LIST = "|TICKETLIST|~{2}{0}{1}";
 
         public const String COMMAND_SERVER_TO_USER_HELLO = "hello@USER[S]";
