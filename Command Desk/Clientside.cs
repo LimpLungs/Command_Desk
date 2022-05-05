@@ -48,7 +48,7 @@ namespace Command_Desk
                                 Program.ACTIVE++;
                                 var increase = false;
 
-                                message = Program.Message(CLIENT_SOCKET, new byte[1024]);
+                                message = Program.Message(CLIENT_SOCKET, new byte[Program.BUFFER_SIZE]);
 
                                 Client server = new Client(message);
 
@@ -67,21 +67,21 @@ namespace Command_Desk
                                 // If the SERVER does not respond with the 'hello' message to the current client type, terminate the program
                                 if (stage == 1 && intendedTarget && (message == Program.COMMAND_SERVER_TO_USER_HELLO || message == Program.COMMAND_SERVER_TO_TECH_HELLO))
                                 {
-                                    Console.WriteLine("Please enter your username (A-Z, a-z, 0-9): ");
+                                    Console.WriteLine("\nPlease enter your username (A-Z, a-z, 0-9): ");
                                     username = Console.ReadLine();
 
                                     while (string.IsNullOrWhiteSpace(username) || !username.All(char.IsLetterOrDigit))
                                     {
-                                        Console.WriteLine("Bad username. Please enter a username using ONLY letters and/or numbers (A-Z, a-z, 0-9)");
+                                        Console.WriteLine("\nBad username. Please enter a username using ONLY letters and/or numbers (A-Z, a-z, 0-9)");
                                         username = Console.ReadLine();
                                     }
 
-                                    Console.WriteLine("Please enter your password: ");
+                                    Console.WriteLine("\nPlease enter your password: ");
                                     password = Console.ReadLine();
 
                                     while (string.IsNullOrWhiteSpace(password))
                                     {
-                                        Console.WriteLine("Password Required! Please enter your password: ");
+                                        Console.WriteLine("\nPassword Required! Please enter your password: ");
                                         password = Console.ReadLine();
                                     }
 
@@ -203,7 +203,21 @@ namespace Command_Desk
                                                 revalSelectorPos(pos, selector);
                                                 reprintMenu(username, selector[0], selector[1], selector[2]);
 
-                                                increase = true;
+                                                switch (pos)
+                                                {
+                                                    case 0:
+                                                        increase = true;
+                                                        stage = 4;
+                                                        break;
+                                                    case 1:
+                                                        increase = false;
+                                                        stage = 5;
+                                                        break;
+                                                    case 2:
+                                                        increase = false;
+                                                        stage = 6;
+                                                        break;
+                                                }
                                                 string select = (pos == 0 ? createNewTicket(username, Program.COMMAND_APPEND_TARGET, Program.COMMAND_APPEND_SENDER) : (pos == 1 ? Program.COMMAND_GOING_VIEW_TICKET : Program.COMMAND_GOING_CLOSE_TICKET));
 
                                                 CLIENT_SOCKET.Send(Program.Command(string.Format(select, Program.COMMAND_APPEND_TARGET, Program.COMMAND_APPEND_SENDER)));
@@ -232,7 +246,7 @@ namespace Command_Desk
                                     bool onTicketList = true;
                                     int max = message.Split('\n').Length - 1;
 
-                                    reprintTickets(pos, message);
+                                    reprintTickets(pos, message, username);
 
                                     ConsoleKey key;
 
@@ -246,15 +260,16 @@ namespace Command_Desk
                                             // set menu position
                                             case ConsoleKey.UpArrow:
                                                 pos = (pos == 0 ? max : pos - 1);
-                                                reprintTickets(pos, message);
+                                                reprintTickets(pos, message, username);
                                                 break;
+
                                             case ConsoleKey.DownArrow:
                                                 pos = (pos == max ? 0 : pos + 1);
-                                                reprintTickets(pos, message);
+                                                reprintTickets(pos, message, username);
                                                 break;
 
                                             case ConsoleKey.R:
-                                                if (Helpers.getTypeFromAppend(Program.COMMAND_APPEND_SENDER) == ClientType.TECH)
+                                                if (max > 0 && pos != max && Helpers.getTypeFromAppend(Program.COMMAND_APPEND_SENDER) == ClientType.TECH)
                                                 {
                                                     var short_message = message.Substring(13);
                                                     var ticket = new Ticket(short_message.Split('\n')[pos]);
@@ -268,11 +283,15 @@ namespace Command_Desk
                                                                    response + "|" +
                                                                    ticket.Status.ToString() + "|";
 
-                                                    CLIENT_SOCKET.Send(Program.Command(string.Format(Program.COMMAND_EDIT_TICKET, compiled, Program.COMMAND_APPEND_SENDER, Program.COMMAND_APPEND_TARGET)));
 
-                                                    reprintTickets(pos, message);
+                                                    CLIENT_SOCKET.Send(Program.Command(string.Format(Program.COMMAND_EDIT_TICKET, Program.COMMAND_APPEND_TARGET, Program.COMMAND_APPEND_SENDER, compiled)));
+
+                                                    pos = 0;
+                                                    reprintTickets(pos, message, username);
                                                 }
+
                                                 break;
+
                                             case ConsoleKey.Enter:
                                                 increase = true;
 
@@ -298,7 +317,9 @@ namespace Command_Desk
                                                                    ticket.TechnicianResponse + "|" +
                                                                    (ticket.Status == TicketStatus.OPEN ? TicketStatus.CLOSED.ToString() : TicketStatus.OPEN.ToString()) + "|";
 
-                                                    CLIENT_SOCKET.Send(Program.Command(string.Format(Program.COMMAND_EDIT_TICKET, compiled, Program.COMMAND_APPEND_SENDER, Program.COMMAND_APPEND_TARGET)));
+                                                    CLIENT_SOCKET.Send(Program.Command(string.Format(Program.COMMAND_EDIT_TICKET, Program.COMMAND_APPEND_TARGET, Program.COMMAND_APPEND_SENDER, compiled)));
+
+                                                    pos = 0;
                                                 }
                                                 break;
                                             default:
@@ -399,8 +420,9 @@ namespace Command_Desk
             return Program.COMMAND_GOING_NEW_TICKET + "~" + Helpers.getTypeFromAppend(sender) + "~" + username + "~" + description + "~~~~"+ target + sender;
         }
 
-        private static void reprintTickets(int pos, string message)
+        private static void reprintTickets(int pos, string message, string username)
         {
+
             var msg = message.Substring(13);
 
             Ticket[] tickets = new Ticket[msg.Split('\n').Length - 1];
@@ -409,7 +431,7 @@ namespace Command_Desk
                 tickets[i] = new Ticket(msg.Split('\n')[i]);
 
             Console.Clear();
-            Console.WriteLine("VIEWING TICKETS FOR " + Helpers.getTypeFromAppend(Program.COMMAND_APPEND_SENDER) + ": " + tickets[0].RequesterUserName + "\n\n");
+            Console.WriteLine("VIEWING TICKETS FOR " + Helpers.getTypeFromAppend(Program.COMMAND_APPEND_SENDER) + ": " + username + "\n\n");
             Console.WriteLine("[UP] and [DOWN] to cycle through menu.\n[Enter] toggles status on ticket or returns to menu.\n" + (Helpers.getTypeFromAppend(Program.COMMAND_APPEND_SENDER) == ClientType.TECH ? "[R] lets you respond to a ticket." : "") + "\n\n");
 
             for (int j = 0; j < tickets.Length; j++)

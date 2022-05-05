@@ -18,6 +18,7 @@ namespace Command_Desk
         public const String MASTER_USER = "ADMIN"; // These would be configurable in an installer on release
         public const String MASTER_PASS = "ADMIN"; // These would be configurable in an installer on release
         public const int PORT_INT = 7777;
+        public const int BUFFER_SIZE = 65536;
         public static int ACTIVE = 0;
         public const int MAX_CLIENTS = 255; // Tested up to 2048 and works, 4096 has out of memory exception on my configuration (Intel(R) Core(TM) i7-9700K CPU @ 3.60GHz 3.60 GHz, 32 GB Ram @3600 Mhz).  Will limit at 255 to ensure wider compatibility.
 
@@ -123,7 +124,7 @@ namespace Command_Desk
 
     class Packet
     {
-        public Byte[] bytes = new Byte[1024];
+        public Byte[] bytes = new Byte[Program.BUFFER_SIZE];
         public int size = 0;
         public String message = "";
 
@@ -179,6 +180,7 @@ namespace Command_Desk
         public string TechnicianResponse;
         public TicketStatus Status;
 
+
         public Ticket(string message_line)
         {
             var fragments = message_line.Split('~');
@@ -190,6 +192,18 @@ namespace Command_Desk
             TechnicianUserName = fragments[5];
             TechnicianResponse = fragments[6].Substring(0, fragments[6].IndexOf('|'));
             Status = Helpers.getStatusFromTicketLine(fragments[6].Substring(fragments[6].IndexOf('|'), fragments[6].Length - fragments[6].IndexOf('|')));
+        }
+        public Ticket(string message_line, string order)
+        {
+            var fragments = message_line.Split('~');
+            Order = order;
+            RequesterClientType = fragments[0];
+            RequesterUserName = fragments[1];
+            IssueDescription = fragments[2];
+            TechnicianClientType = fragments[3];
+            TechnicianUserName = fragments[4];
+            TechnicianResponse = fragments[5].Substring(0, fragments[5].IndexOf('|'));
+            Status = Helpers.getStatusFromTicketLine(fragments[5].Substring(fragments[5].IndexOf('|'), fragments[5].Length - fragments[5].IndexOf('|')));
         }
     }
 

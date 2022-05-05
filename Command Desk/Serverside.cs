@@ -165,22 +165,15 @@ namespace Command_Desk
 
                             handler.Send(Program.Command(string.Format(Program.COMMAND_TICKET_LIST, "@" + responder.sender, "[" + responder.target.ToString().ElementAt(0) + "]", getTicketList(username, responder.sender))));
                         }
-
-                        if (response.message.Split('~')[0] == Program.COMMAND_EDIT_TICKET.Substring(0, 6) && response.message.Split('~').Length == 7 && responder.target == ClientType.SERVER)
+                        
+                        if (response.message.Split('~')[0] == Program.COMMAND_EDIT_TICKET.Substring(0, 6) && response.message.Split('~').Length == 7)
                         {
                             Console.WriteLine(String.Format("Edit Ticket Action Request from {0}", username));
 
-                            var RequesterClientType = response.message.Split('~')[1];
-                            var RequesterUserName = response.message.Split('~')[2];
-                            var IssueDescription = response.message.Split('~')[3];
-                            var TechnicianClientType = response.message.Split('~')[4];
-                            var TechnicianUserName = response.message.Split('~')[5];
-                            var TechnicianResponse = response.message.Split('~')[6];
-                            var TechnicianStatus = response.message.Split('~')[7];
-                            
-                            string ticket_line = String.Concat(RequesterClientType, "~", RequesterUserName.ToUpper(), "~", IssueDescription, "~", TechnicianClientType, "~", TechnicianUserName, "~", TechnicianResponse, "|" + TechnicianStatus + "|", "\n");
-                            
-                            Ticket ticket = new Ticket(ticket_line);
+                            var short_message = response.message.Substring(7);
+                            short_message = short_message.Substring(0, short_message.LastIndexOf('@'));
+
+                            Ticket ticket = new Ticket(short_message, null);
 
                             editLine(ticket);
                         }
@@ -364,6 +357,7 @@ namespace Command_Desk
             else
                 return "1~NO TICKETS IN SYSTEM";
 
+
         }
 
         private static void editLine(Ticket ticket)
@@ -372,6 +366,8 @@ namespace Command_Desk
             {
                 var index = 0;
                 var ticket_data = File.ReadAllLines("C:\\CommandDesk_Tickets.txt");
+
+                Console.WriteLine(ticket.TechnicianUserName + " is editing a ticket response.");
 
                 foreach(var row in ticket_data)
                 {
