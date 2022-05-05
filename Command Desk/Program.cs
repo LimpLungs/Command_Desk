@@ -24,15 +24,18 @@ namespace Command_Desk
         public static String COMMAND_APPEND_TARGET = "@TARGET"; // should be @target/sender
         public static String COMMAND_APPEND_SENDER = "[SENDER]"; // should be @target/sender
 
+        public const String COMMAND_OK = "OK{0}{1}";
         public const String COMMAND_VALID_LOGIN = "LOGIN~TRUE{0}{1}";
         public const String COMMAND_INVALID_LOGIN = "LOGIN~FALSE{0}{1}";
-        public const String COMMAND_CLIENT_TYPE = "RETURNCLIENTTYPE{0}{1}";
 
-        public const String COMMAND_OK = "OK{0}{1}";
+        public const String COMMAND_CLIENT_TYPE = "RETURNCLIENTTYPE{0}{1}";
         public const String COMMAND_GOING_MENU = "GOINGMENU{0}{1}";
-        public const String COMMAND_GOING_NEW_TICKET = "@NEW@";
         public const String COMMAND_GOING_VIEW_TICKET = "GOINGVIEWTICKET{0}{1}";
         public const String COMMAND_GOING_CLOSE_TICKET = "GOINGCLOSETICKET{0}{1}";
+
+        public const String COMMAND_GOING_NEW_TICKET = "|NEW|";
+        public const String COMMAND_FLIP_STATUS = "|FLIPSTATUS|~{2}{0}{1}";
+        public const String COMMAND_TICKET_LIST = "|TICKETLIST|~{2}{0}{1}";
 
         public const String COMMAND_SERVER_TO_USER_HELLO = "hello@USER[S]";
         public const String COMMAND_SERVER_TO_TECH_HELLO = "hello@TECH[S]";
@@ -116,6 +119,7 @@ namespace Command_Desk
         }
     }
     public enum ClientType { USER, TECH, SERVER, NONE };
+    public enum TicketStatus { OPEN, CLOSED };
 
     class Packet
     {
@@ -164,6 +168,31 @@ namespace Command_Desk
 
     }
 
+    class Ticket
+    {
+        public string Order;
+        public string RequesterClientType;
+        public string RequesterUserName;
+        public string IssueDescription;
+        public string TechnicianClientType;
+        public string TechnicianUserName;
+        public string TechnicianResponse;
+        public TicketStatus Status;
+
+        public Ticket(string message_line)
+        {
+            var fragments = message_line.Split('~');
+            Order = fragments[0];
+            RequesterClientType = fragments[1];
+            RequesterUserName = fragments[2];
+            IssueDescription = fragments[3];
+            TechnicianClientType = fragments[4];
+            TechnicianUserName = fragments[5];
+            TechnicianResponse = fragments[6].Substring(0, fragments[6].IndexOf('|'));
+            Status = Helpers.getStatusFromTicketLine(fragments[6].Substring(fragments[6].IndexOf('|'), fragments[6].Length - fragments[6].IndexOf('|')));
+        }
+    }
+
     class Helpers
     {
         public static ClientType getTypeFromAppend(String s)
@@ -189,5 +218,15 @@ namespace Command_Desk
             }
         }
 
+        public static TicketStatus getStatusFromTicketLine(String s)
+        {
+            switch (s)
+            {
+                case "|OPEN|":
+                    return TicketStatus.OPEN;
+                default:
+                    return TicketStatus.CLOSED;
+            }
+        }
     }
 }

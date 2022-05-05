@@ -133,7 +133,6 @@ namespace Command_Desk
                         {
                             Console.WriteLine("2-- " + response.message);
 
-                            increase = true;
                             handler.Send(Program.Command(string.Format(Program.COMMAND_OK, "@" + responder.sender, "[" + responder.target.ToString().ElementAt(0) + "]")));
                         }
 
@@ -154,18 +153,27 @@ namespace Command_Desk
 
                             handler.Send(Program.Command(string.Format(Program.COMMAND_OK, "@" + responder.sender, "[" + responder.target.ToString().ElementAt(0) + "]")));
                         }
-                        else if (response.message == string.Format(Program.COMMAND_GOING_VIEW_TICKET, responder.target_append, responder.sender_append))
+                        
+                        if (response.message == string.Format(Program.COMMAND_GOING_VIEW_TICKET, responder.target_append, responder.sender_append))
                         {
                             Console.WriteLine(string.Format("View Ticket Request from {0}", username));
 
-                            increase = true;
-                            handler.Send(Program.Command(string.Format(Program.COMMAND_OK, "@" + responder.sender, "[" + responder.target.ToString().ElementAt(0) + "]")));
+                            handler.Send(Program.Command(string.Format(Program.COMMAND_TICKET_LIST, "@" + responder.sender, "[" + responder.target.ToString().ElementAt(0) + "]", getTicketList(username, responder.sender))));
                         }
-                        else if (response.message == string.Format(Program.COMMAND_GOING_CLOSE_TICKET, responder.target_append, responder.sender_append))
+                        
+                        if (response.message == string.Format(Program.COMMAND_GOING_CLOSE_TICKET, responder.target_append, responder.sender_append))
                         {
                             Console.WriteLine(string.Format("Close Ticket Request from {0}", username));
 
-                            increase = true;
+                            handler.Send(Program.Command(string.Format(Program.COMMAND_OK, "@" + responder.sender, "[" + responder.target.ToString().ElementAt(0) + "]")));
+                        }
+
+                        if (response.message.Split('~')[0] == Program.COMMAND_FLIP_STATUS.Substring(0, 12) && responder.target == ClientType.SERVER)
+                        {
+                            // Need to verify sender matches user on line,
+                            // then parse out the line and update the status in the tickets file.
+
+                            // For now, just sending the OK command to let the client know to return to menu.
                             handler.Send(Program.Command(string.Format(Program.COMMAND_OK, "@" + responder.sender, "[" + responder.target.ToString().ElementAt(0) + "]")));
                         }
 
@@ -313,6 +321,35 @@ namespace Command_Desk
             }
 
             return username;
+        }
+
+        private static string getTicketList(string username, ClientType type)
+        {
+            if (File.Exists("C:\\CommandDesk_Tickets.txt"))
+            {
+                int count = 0;
+                string ticket_return = "";
+
+                var ticket_data = File.ReadAllLines("C:\\CommandDesk_Tickets.txt");
+
+                foreach (var ticket in ticket_data)
+                {
+                    if (ticket.Split('~')[0] == type.ToString() && ticket.Split('~')[1] == username)
+                    {
+                        count += 1;
+
+                        ticket_return += (count.ToString() + "~" + ticket + "\n");
+                    }
+                }
+
+                if (count > 0)
+                    return ticket_return;
+                else
+                    return "1~NO TICKETS IN SYSTEM FOR USER";
+            }
+            else
+                return "1~NO TICKETS IN SYSTEM";
+
         }
     }
 }

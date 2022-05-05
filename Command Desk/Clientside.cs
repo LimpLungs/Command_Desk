@@ -217,11 +217,63 @@ namespace Command_Desk
 
                                 if (stage == 4 && intendedTarget && message == string.Format(Program.COMMAND_OK, server.target_append, server.sender_append))
                                 {
-                                    Console.WriteLine("Action Compelete.");
-
                                     // Go back up to menu.
                                     stage = 3;
                                     CLIENT_SOCKET.Send(Program.Command(string.Format(Program.COMMAND_GOING_MENU, Program.COMMAND_APPEND_TARGET, Program.COMMAND_APPEND_SENDER)));
+                                }
+                                if (stage == 4 && intendedTarget && message.StartsWith(string.Format(Program.COMMAND_TICKET_LIST,"","","")))
+                                {
+                                    int pos = 0;
+                                    bool onTicketList = true;
+                                    int max = message.Split('\n').Length - 1;
+
+                                    reprintTickets(pos, message);
+
+                                    ConsoleKey key;
+
+                                    while (!Console.KeyAvailable && onTicketList)
+                                    {
+
+                                        key = Console.ReadKey(false).Key;
+
+                                        switch (key)
+                                        {
+                                            // set menu position
+                                            case ConsoleKey.UpArrow:
+                                                pos = (pos == 0 ? max : pos - 1);
+                                                reprintTickets(pos, message);
+                                                break;
+                                            case ConsoleKey.DownArrow:
+                                                pos = (pos == max ? 0 : pos + 1);
+                                                reprintTickets(pos, message);
+                                                break;
+
+                                            case ConsoleKey.Enter:
+                                                // GO TO SELECTED
+                                                increase = true;
+
+                                                if (pos == max)
+                                                {
+                                                    stage = 3;
+                                                    CLIENT_SOCKET.Send(Program.Command(string.Format(Program.COMMAND_GOING_MENU, Program.COMMAND_APPEND_TARGET, Program.COMMAND_APPEND_SENDER)));
+                                                }
+                                                else
+                                                {
+                                                    // This is where I would implement other features onto a ticket after selection.
+                                                    // Since the MVP did not outline an action for a user onto a ticket besides delete,
+                                                    // hitting enter on the ticket will go back to menu as well.
+
+                                                    stage = 3;
+                                                    CLIENT_SOCKET.Send(Program.Command(string.Format(Program.COMMAND_FLIP_STATUS, "", Program.COMMAND_APPEND_SENDER, Program.COMMAND_APPEND_TARGET)));
+                                                }
+
+                                                onTicketList = false;
+                                                break;
+                                            default:
+                                                break;
+
+                                        }
+                                    }
                                 }
 
                                 if (increase)
@@ -313,6 +365,28 @@ namespace Command_Desk
             }
 
             return Program.COMMAND_GOING_NEW_TICKET + "~" + Helpers.getTypeFromAppend(sender) + "~" + username + "~" + description + "~~~~"+ target + sender;
+        }
+
+        private static void reprintTickets(int pos, string message)
+        {
+            var msg = message.Substring(13);
+
+            Ticket[] tickets = new Ticket[msg.Split('\n').Length - 1];
+
+            for (int i = 0; i < msg.Split('\n').Length - 1; i++)
+                tickets[i] = new Ticket(msg.Split('\n')[i]);
+
+            Console.Clear();
+            Console.WriteLine("VIEWING TICKETS FOR USER: " + tickets[0].RequesterUserName + "\n\n");
+
+            for (int j = 0; j < tickets.Length; j++)
+            {
+                Console.WriteLine((pos == j ? "-->\t" : "\t") + tickets[j].Order + " - " + tickets[j].Status + " - " + tickets[j].IssueDescription + "\n");
+                Console.WriteLine((pos == j ? "\t" : "\t") + "\t" + tickets[j].TechnicianClientType + ": " + tickets[j].TechnicianUserName + "\n");
+                Console.WriteLine((pos == j ? "\t" : "\t") + "\t" + "Technician Response: " + tickets[j].TechnicianResponse + "\n");
+            }
+
+            Console.WriteLine((pos == tickets.Length ? "-->\t" : "\t") + "\n" + tickets.Length + " - Back to Main Menu!");
         }
     }
 }
